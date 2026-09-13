@@ -1,0 +1,147 @@
+# @name    Weather
+# @desc    Wetter und aktuelle Temperatur
+# @author  Hank_the_Tank / Jonas Huberts
+# @version 4.0
+# @icons   53386, 2286, 53384, 17055, 2720, 2289, 49300, 29839, 36637
+# @config  lat    number "Latitude" default=48.05 min=-90 max=90 step=0.0001
+# @config  lon    number "Longitude" default=10.88 min=-180 max=180 step=0.0001
+# @config  unit   select "Temperature unit" default=C options=C,F
+# @config  format select "Format" default=deg options=deg,full help="deg: 24°, full: 24°C"
+# @config  color  bool   "Color by temperature" default=true
+# @config  every  number "Refresh (minutes)" default=15 min=5 max=60 unit=min
+
+class Weather
+  var st, label, tcol, wic, ticks, age, traw, busy, period
+
+  def init()
+    # Interpolation table: min_temp, color
+    self.st = [-12, 0xD977DF, -6, 0x9545BC, -1, 0x4B379C, 0, 0xFEC4FF,
+                4, 0x31B8DB, 10, 0x31DB8B, 15, 0x6ED228, 21, 0xFFFF28,
+               27, 0xF87E27, 32, 0xCF3927, 38, 0xA12527]
+    var p = store.get("every", 15)
+    if p == nil || p <= 0 p = 15 end
+    self.period = p * 60
+    self.traw = store.get("temp")
+    self.label = self.traw == nil ? nil : self.label_for(self.traw)
+    self.tcol = store.get("col", 0xFFFFFF)
+    self.wic = store.get("icon", "53386")
+    self.ticks = 0
+    self.age = 9999
+    self.busy = false
+  end
+
+  def label_for(t)
+    var u = store.get("unit", "C")
+    var v = u == "F" ? t * 1.8 + 32 : t
+    var rounded = int(v + (v >= 0 ? 0.5 : -0.5))
+    var is_full = store.get("format", "deg") == "full"
+    var sym = is_full ? (u == "F" ? "°F" : "°C") : (u == "F" ? "F" : "°")
+    return str(rounded) + sym
+  end
+
+  def on_body(w, status)
+    self.busy = false
+    if w == nil return end
+    var m = re.search("_2m\":([-0-9.]+)", w)
+    var c = re.search("code\":(\\d+)", w)
+    if m == nil || c == nil return end
+    var t = num(m[1])
+    if t == nil return end
+    self.traw = t
+
+    # Compute color from temperature if enabled
+    if store.get("color", true)
+      var s = self.st
+      var col = s[1]
+      if t > s[0]
+        var j = 0
+        while j < 20 && t >= s[j + 2]
+          j += 2
+        end
+        if j >= 20
+          col = s[21]
+        else
+          var a = s[j + 1]
+          var b = s[j + 3]
+          var f = (t - s[j]) * 1.0 / (s[j + 2] - s[j])
+          col = rgb(int(a / 65536 % 256 + (b / 65536 % 256 - a / 65536 % 256) * f),
+                    int(a / 256 % 256 + (b / 256 % 256 - a / 256 % 256) * f),
+                    int(a % 256 + (b % 256 - a % 256) * f))
+        end
+      end
+      self.tcol = col
+    else
+      self.tcol = 0xFFFFFF
+    end
+
+    self.label = self.label_for(t)
+
+    # Map WMO weather codes to high quality AWTRIX icons
+    var k = int(num(c[1]))
+    var ic = "36637"
+    if k == 0     ic = "53386"
+    elif k <= 2   ic = "2286"
+    elif k == 3   ic = "53384"
+    elif k <= 48  ic = "17055"
+    elif k <= 67  ic = "2720"
+    elif k <= 77  ic = "2289"
+    elif k <= 82  ic = "49300"
+    elif k <= 86  ic = "2289"
+    elif k >= 95  ic = "29839"
+    end
+    self.wic = ic
+    self.age = 0
+
+    store.set("temp", self.traw)
+    store.set("col", self.tcol)
+    store.set("icon", ic)
+  end
+
+  def loop()
+    self.age += 1
+    if self.ticks <= 0 && !self.busy
+      self.ticks = self.period
+      self.busy = true
+      var lat = store.get("lat", 48.05)
+      var lon = store.get("lon", 10.88)
+      http.get("http://api.open-meteo.com/v1/forecast" +
+               "?latitude=" + str(lat) +
+               "&longitude=" + str(lon) +
+               "&current=temperature_2m,weather_code" +
+               "&timeformat=unixtime&timezone=auto",
+               / b, st -> self.on_body(b, st),
+               {'find': "\"current\":", 'keep': 160})
+    end
+    self.ticks -= 1
+  end
+
+  def draw()
+    clear()
+    if self.label == nil
+      text(10, 6, "...", 0x666666)
+      return
+    end
+
+    # Weather icon at (0, 0)
+    if !icon(self.wic, 0, 0)
+      # Fallback sun if icon is not yet on the device
+      circle_fill(4, 4, 3, 0xFFCC00)
+    end
+
+    # Clean centered temperature display on the remaining display area (x: 8..31)
+    var w = text_ink_width(self.label)
+    var x = 8 + int((width() - 8 - w) / 2)
+    text(x, 6, self.label, self.tcol)
+
+    # Outdated indicator (> 20 min)
+    if self.age > 1200
+      pixel(width() - 1, height() - 1, 0xFF0000)
+    end
+  end
+
+  def on_button(btn)
+    if btn == "select" self.ticks = 0 end
+  end
+end
+
+return Weather()

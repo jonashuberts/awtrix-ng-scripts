@@ -1,162 +1,116 @@
-# AWTRIX Python Integrations
+# AWTRIX NG Scripts
 
-[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
-[![uv](https://img.shields.io/badge/package%20manager-uv-6f42c1)](https://github.com/astral-sh/uv)
-[![Platform](https://img.shields.io/badge/platform-macOS-lightgrey)](#run-modes)
+[![AWTRIX NG](https://img.shields.io/badge/AWTRIX-NG-FF6F00.svg)](https://github.com/Blueforcer/awtrix-ng)
+[![Berry Language](https://img.shields.io/badge/language-Berry-blue.svg)](https://berry-lang.github.io/)
+[![Hardware](https://img.shields.io/badge/hardware-Ulanzi%20TC001-green.svg)](https://blueforcer.github.io/awtrix-ng/)
 
-Lightweight, plugin-based AWTRIX integration app for **weather** and **YouTube subscriber count**.  
-Optimized for **macOS tray/menu-bar background usage**.
+Native, standalone [AWTRIX NG](https://github.com/Blueforcer/awtrix-ng) Berry (`.ax`) scripts for **Weather** and **YouTube Subscriber Count**.
 
-## Why this project
+Everything runs directly on the clock (ESP32) — **no local MacBook server, Python daemon, or external bridge required.**
 
-- Simple plugin architecture (`plugins/`)
-- Clean JSON configuration (`config.json`)
-- Multi-profile auto-detection (home/work/...)
-- `.env` secret support
-- Works as a tray app or headless runner
-- macOS features: **Start at Login** support and dynamic tray icon
-- **Network resilience**: automatically reconnects when AWTRIX comes back online after a Wi-Fi change or system startup delay
+---
 
-## Installation (macOS App)
+## 📱 Included Apps
 
-1. Download the `AWTRIX-macOS-arm64.app.zip` from the [Releases](https://github.com/jonashuberts/awtrix-python-integrations/releases) page.
-2. Unzip and move `AWTRIX.app` to your `/Applications` folder.
+### 1. Weather (`Weather.ax`)
+A clean, memory-optimized weather app for AWTRIX NG.
 
-At first launch, runtime files are created in:
+- **Clean Display Layout**:
+  - **Left (0, 0)**: High-resolution animated or static weather condition icon (8×8).
+  - **Right (8 to 31)**: Clean, centered temperature display (e.g. `24°` or `24°C`).
+  - *No moon phase clutter and no distracting bottom forecast bar.*
+- **Keyless & Accurate**: Fetches live weather data from [Open-Meteo](https://open-meteo.com/) — no API keys or accounts required.
+- **Ultra Low RAM Footprint**: Streams and filters only ~160 bytes of JSON on ESP32 microcontrollers without PSRAM.
+- **Dynamic Temperature Color**: Smooth gradient color coding from freezing purple/blue to mild green, warm yellow, and hot red.
+- **Instant Boot Display**: Caches the last known temperature and icon in flash memory (`store`), rendering immediately after a clock reboot.
+- **Outdated Data Warning**: Shows a subtle red indicator pixel in the bottom-right corner if weather data is older than 20 minutes.
+- **Manual Refresh**: Press the **middle button** on the clock to trigger an immediate update.
 
-- `~/Library/Application Support/AWTRIX/config.json`
-- `~/Library/Application Support/AWTRIX/.env`
+### 2. YouTube Subscriber Count (`YouTube.ax`)
+A live subscriber tracker for any YouTube channel.
 
-Sensitive values are expected there and are not bundled as live `.env` secrets.
+- **Proper AWTRIX Icon**: Uses the native `youtube-2` (or `youtube`) icon from `/ICONS` instead of crude hand-drawn pixel shapes, with an automatic drawn fallback if no icon file is found.
+- **Keyless**: Uses `api.socialcounts.org` to fetch live subscriber numbers without needing a Google Cloud API key.
+- **Smart Formatting**: Compact human-readable formatting (e.g. `1.2K`, `50.4K`, `1.5M`) with a smooth red-to-pink gradient (`ramp_text`).
+- **RAM & TLS Safe**: Includes TLS concurrency protection (`tls_busy()`) to prevent Wi-Fi stack memory collisions on ESP32.
+- **Instant Boot Display**: Stores subscriber counts in persistent memory to display immediately upon startup.
+- **Manual Refresh**: Press the **middle button** on the clock for an immediate refresh.
 
-### macOS Security & Privacy
+---
 
-Since this app is not signed by a registered Apple Developer, macOS Gatekeeper will block it upon first launch.
+## 🚀 Installation Guide
 
-**To fix this, run the following command in your terminal:**
+### Option 1: Web UI Copy & Paste (Recommended)
 
-```bash
-xattr -d com.apple.quarantine /Applications/AWTRIX.app
-```
+1. Open your browser and navigate to your AWTRIX NG Web interface:
+   ```text
+   http://<awtrix-ip>/
+   ```
+   *(e.g. `http://awtrix.local` or `http://192.168.1.5`)*
+2. In the top navigation bar, click on **Scripts**.
+3. Click **New Script** (or `+`):
+   - **Name**: `Weather`
+   - Copy the entire contents of [`Weather.ax`](Weather.ax) and paste it into the editor.
+   - Click **Save** (or press `Ctrl+S`).
+4. Repeat for YouTube:
+   - Click **New Script**:
+   - **Name**: `YouTube`
+   - Copy the entire contents of [`YouTube.ax`](YouTube.ax) and paste it into the editor.
+   - Click **Save**.
 
-*Alternatively: Right-click (or Control-click) the app and select **Open** from the menu, then click **Open** again in the dialog box.*
+---
 
-## Quick start (Development)
+## ⚙️ Configuration
 
-1. Install dependencies:
+AWTRIX NG allows you to change app settings without editing code:
 
-```bash
-uv sync
-```
+1. Open the Web UI and go to the **Apps** tab.
+2. Click the **gear icon (⚙️)** next to your script row.
 
-2. Create your env file:
+### Weather Settings
 
-```bash
-cp .env.example .env
-```
+| Setting | Type | Default | Description |
+|---|---|---|---|
+| `Latitude` | Number | `48.05` | Geographic latitude of your location |
+| `Longitude` | Number | `10.88` | Geographic longitude of your location |
+| `Temperature unit` | Select | `C` | Choose between Celsius (`C`) and Fahrenheit (`F`) |
+| `Format` | Select | `deg` | `deg` shows `24°`, `full` shows `24°C` |
+| `Color by temperature` | Bool | `true` | Colorize text according to temperature |
+| `Refresh (minutes)` | Number | `15` | Update frequency in minutes (5–60) |
 
-3. Run:
+### YouTube Settings
 
-```bash
-uv run python main.py
-```
+| Setting | Type | Default | Description |
+|---|---|---|---|
+| `Channel ID` | Text | `UCGmQ7UYxfMAKYBbymrzf9-Q` | The `UC...` channel ID from your YouTube URL |
+| `Icon ID/name` | Text | `youtube-2` | Icon name or ID in `/ICONS` (e.g. `youtube-2` or `youtube`) |
+| `Refresh (hours)` | Number | `1` | Update frequency in hours (1–24) |
 
-## Run modes
+---
 
-- **macOS default**: tray app (menu bar, no window)
-- **Headless mode**: set `AWTRIX_TRAY=0`
+## 🎨 Icons
 
-```bash
-AWTRIX_TRAY=0 uv run python main.py
-```
+Both scripts use high-quality icons stored in the `/ICONS` directory on your AWTRIX.
 
-## Menu bar status indicator
+### Weather Icons
+The weather script maps WMO weather codes to the following icon IDs:
+- `53386` — Clear sky
+- `2286` — Partly cloudy
+- `53384` — Overcast
+- `17055` — Fog
+- `2720` — Rain / Drizzle
+- `2289` — Snow
+- `49300` — Rain showers
+- `29839` — Thunderstorm
+- `36637` — Unknown / Fallback
 
-When running as a tray app the menu bar icon and menu reflect the live connection state:
+### YouTube Icon
+- `youtube-2` (or `youtube`)
 
-| Icon colour | Meaning |
-|-------------|---------|
-| ⚪ White | Connected — everything is working |
-| 🟠 Orange | Unreachable for ~1 minute — background retry is active |
-| ⚫ Grey | Updates paused by the user |
-| 🔴 Red | Config or plugin load error |
+> **Tip:** You can download and install icons directly from the [AWTRIX Hub Icon Directory](https://awtrix.de/icons) or upload GIF/JPG files in the **Icons** section of your AWTRIX Web UI.
 
-The menu shows:
-- **AWTRIX · `profile`** — current profile name
-- **🟢 Connected — Connected to `ip`** — one-line live status with detail
-- **Reconnect now** — force an immediate re-probe and profile re-detection (useful after switching Wi-Fi)
-- **Reload config** — re-read `config.json` and `.env` without restarting
-- **Pause updates** — suspend all plugin updates while keeping the app running
+---
 
-The icon colour only changes after **4 consecutive failed probes** (~1 minute), so brief network hiccups during normal operation do not cause any visible flashing.
+## 🗄️ Legacy Code
 
-## Network resilience
-
-A background connectivity monitor runs every 15 seconds (configurable via `AWTRIX_RECONNECT_INTERVAL`):
-
-- While connected it probes silently — no icon changes, no log spam.
-- When AWTRIX becomes unreachable (e.g. you switched Wi-Fi or the device is booting) the icon turns orange after ~1 minute.
-- The monitor re-runs **profile auto-detection** on every reconnect attempt, so switching networks automatically picks the right profile.
-- The moment AWTRIX responds again the icon returns to white and updates resume immediately.
-
-## Logs
-
-Logs are written to a rotating file so they never fill up your disk:
-
-- **macOS**: `~/Library/Logs/AWTRIX/awtrix.log`
-- **Other**: `~/.awtrix/logs/awtrix.log`
-
-Maximum size: **2 MB** per file, **3 backups** kept (6 MB total).
-
-## Configuration
-
-Core config keys:
-
-- `interval`: update interval in seconds
-- `profiles`: named AWTRIX targets with optional plugin overrides
-- `default_profile`: fallback if no profile is reachable
-- `plugins`: enabled integrations and their config
-
-Environment placeholders in config are supported:
-
-```json
-"api_key": "${OPENWEATHER_API_KEY}"
-```
-
-### Multi-location profile behavior
-
-- On startup, the app probes each profile AWTRIX endpoint.
-- First reachable profile is selected automatically.
-- You can override selection via the **Profile** submenu in the tray or via environment variable:
-
-```bash
-export AWTRIX_PROFILE=home
-uv run python main.py
-```
-
-## Build macOS app bundle
-
-```bash
-bash scripts/build_macos_app.sh
-```
-
-Build output:
-
-- `dist/AWTRIX.app`
-- `dist/AWTRIX/AWTRIX` (standalone CLI binary)
-
-## Environment variables
-
-```bash
-YOUTUBE_API_KEY=your-api-key
-OPENWEATHER_API_KEY=your-api-key
-AWTRIX_PROFILE=work
-AWTRIX_CONFIG=config.json
-AWTRIX_TRAY=1
-AWTRIX_RECONNECT_INTERVAL=15   # seconds between connectivity probes (default: 15)
-```
-
-## AWTRIX API documentation
-
-- Project quick reference (official-doc based): `docs/awtrix-api-relevant.md`
-- Official source on device: `http://<awtrix-ip>/` → **API** → **MQTT / HTTP API**
+The legacy Python server daemon and macOS menu bar application previously used to push updates from a Mac to AWTRIX have been moved to the [`legacy/`](legacy/) folder. They are preserved for historical reference and are no longer required.
