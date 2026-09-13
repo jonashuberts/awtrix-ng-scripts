@@ -27,8 +27,8 @@ Two clean, standalone Berry scripts for [AWTRIX NG](https://github.com/Blueforce
 4. Create `YouTube`, paste the contents of [`YouTube.ax`](YouTube.ax), and click **Save**.
 
 ### Icons
-- **YouTube**: Uses Icon ID `3389` (works out of the box with pixel-perfect fallback, or upload [`3389.gif`](3389.gif) under **Icons**).
-- **Weather**: Uses standard Hub icons (`53386`, `2286`, `53384`, `17055`, `2720`, `2289`, `49300`, `29839`).
+- **YouTube**: **Kein GIF nötig!** Das Icon wird direkt im Skript gezeichnet.
+- **Weather**: Die Wetter-Icons werden von AWTRIX NG automatisch geladen.
 
 ---
 

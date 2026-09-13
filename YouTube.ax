@@ -1,10 +1,9 @@
 # @name    YouTube
 # @desc    Live subscriber count of a YouTube channel
 # @author  Blueforcer / Jonas Huberts
-# @version 2.3
-# @icons   3389
+# @version 2.4
 # @config  chan  text   "Channel ID" default="UCGmQ7UYxfMAKYBbymrzf9-Q" maxlen=32 help="The UC... part of youtube.com/channel/UC..."
-# @config  icon  text   "Icon ID"   default="3389" maxlen=32 help="Icon ID in /ICONS (default: 3389)"
+# @config  icon  text   "Icon ID"   default="" maxlen=32 help="Optional custom icon ID from /ICONS (leave empty for built-in icon)"
 # @config  every number "Refresh"   default=1 min=1 max=24 unit=h
 
 class YouTube
@@ -101,18 +100,20 @@ class YouTube
   def draw()
     clear()
 
-    # Draw icon: try configured icon (3389), then "3389", then "youtube", then exact pixel fallback
+    # Draw icon: custom icon if set, otherwise built-in pixel-perfect badge (no GIF needed!)
     var ic = store.get("icon")
-    if ic == nil || ic == "" ic = "3389" end
+    var has_icon = false
+    if ic != nil && ic != "" && ic != "3389" && ic != "youtube"
+      has_icon = icon(ic, 0, 0)
+    end
 
-    if !icon(ic, 0, 0) && !icon("3389", 0, 0) && !icon("youtube", 0, 0)
-      # Pixel-perfect fallback of Icon ID 3389
-      rect_fill(0, 2, 8, 4, 0xFF0000)
+    if !has_icon
+      # YouTube badge: exactly 5 pixels high (rows 1-5), 3-pixel play triangle (rows 2-4)
+      rect_fill(0, 2, 8, 3, 0xFF0000)
       line(1, 1, 6, 1, 0xFF0000)
-      line(1, 6, 6, 6, 0xFF0000)
-      line(3, 2, 3, 5, 0xFFFFFF)
+      line(1, 5, 6, 5, 0xFF0000)
+      line(3, 2, 3, 4, 0xFFFFFF)
       pixel(4, 3, 0xFFFFFF)
-      pixel(4, 4, 0xFFFFFF)
     end
 
     if self.label != nil
