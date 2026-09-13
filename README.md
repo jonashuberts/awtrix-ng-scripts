@@ -14,7 +14,7 @@ Two clean, standalone Berry scripts for [AWTRIX NG](https://github.com/Blueforce
 
 ### 2. YouTube (`YouTube.ax`)
 - Live subscriber count via `api.socialcounts.org` (no API key needed).
-- Uses native `youtube` icon with smooth gradient subscriber count.
+- Displays official YouTube Icon (`3389`) with gradient subscriber text.
 - Concurrency-safe and instant display after reboot.
 
 ---
@@ -27,7 +27,7 @@ Two clean, standalone Berry scripts for [AWTRIX NG](https://github.com/Blueforce
 4. Create `YouTube`, paste the contents of [`YouTube.ax`](YouTube.ax), and click **Save**.
 
 ### Icons
-- **YouTube**: Upload [`youtube.gif`](youtube.gif) in the **Icons** tab of your Web UI (included in this repo).
+- **YouTube**: Uses Icon ID `3389` (works out of the box with pixel-perfect fallback, or upload [`3389.gif`](3389.gif) under **Icons**).
 - **Weather**: Uses standard Hub icons (`53386`, `2286`, `53384`, `17055`, `2720`, `2289`, `49300`, `29839`).
 
 ---
